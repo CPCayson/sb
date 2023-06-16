@@ -1,0 +1,823 @@
+
+
+#subscription
+# from paypalcheckoutsdk.orders import OrdersGetRequest
+# from paypalcheckoutsdk.payments import AuthorizationsCaptureRequest
+# import paypalhttp
+
+ALLOWED_EXTENSIONS = {'pdf', 'doc', 'docx'}
+
+
+
+###Authorization####
+@login_manager.user_loader
+def load_user(user_id):
+    try:
+        return User.query.get(int(user_id))
+    except:
+        return None
+
+    
+    
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if current_user.is_authenticated:
+        return redirect(url_for('index'))
+    form = LoginForm()
+    if form.validate_on_submit():
+        user = User.query.filter_by(username=form.username.data).first()
+        if user is None or not user.check_password(form.password.data):
+            flash('Invalid username or password')
+            return redirect(url_for('login'))
+        login_user(user, remember=form.remember_me.data)
+        next_page = request.args.get('next')
+        if not next_page or url_parse(next_page).netloc != '':
+            next_page = url_for('index')
+        return redirect(next_page)
+    return render_template('login.html', title='Sign In', form=form)
+
+
+# Logout route
+@app.route('/test')
+def tester():
+    documents = Document.query.all()
+    return render_template('test.html', title='test', documents=documents)     
+    
+    
+# Logout route
+@app.route('/logout')
+def logout():
+    logout_user()
+    return redirect(url_for('index'))
+
+# Registration route
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    if current_user.is_authenticated:
+        return redirect(url_for('index'))
+    form = RegistrationForm()
+    if form.validate_on_submit():
+        user = User(username=form.username.data, email=form.email.data)
+        user.set_password(form.password.data)
+        db.session.add(user)
+        db.session.commit()
+        flash('Congratulations, you are now a registered user!')
+        return redirect(url_for('login'))
+    return render_template('register.html', title='Register', form=form)
+    
+    
+    
+    ####Main PAges ####
+
+# Index route
+@app.route('/', methods=['GET', 'POST'])
+@app.route('/index', methods=['GET', 'POST'])
+def index():
+    documents = Document.query.all()
+    return render_template('index.html', title='Home', documents=documents)
+
+# User profile route
+@app.route('/user/<username>')
+@login_required
+def user(username):
+    user = User.query.filter_by(username=username).first_or_404()
+    documents = Document.query.filter_by(user_id=user.id).all()
+    bookmarked_files = user.bookmarked_files
+    def is_bookmarked(self, document):
+        return document in self.bookmarked_files
+    return render_template('user.html', user=user, documents=documents, bookmarked_files=bookmarked_files)
+
+
+##important routes
+
+
+# School route
+@app.route('/school/<int:school_id>')
+def school(school_id):
+    school = School.query.get_or_404(school_id)
+    documents = Document.query.filter_by(school_id=school.id).all()
+    return render_template('school.html', school=school, documents=documents)
+    
+
+@app.route('/bookmark_file/<int:file_id>', methods=[ 'POST'])
+@login_required
+def bookmark_file(file_id):
+    file = Document.query.get(file_id)
+    
+    if file is None:
+        flash('File not found.')
+        return redirect(url_for('index'))
+    if file in current_user.bookmarked_files:
+        flash('You have already bookmarked this file.')
+        return redirect(url_for('index'))
+    current_user.bookmarked_files.append(file)
+    db.session.commit()
+    flash('You have bookmarked this file.')
+    return redirect(url_for('index'))
+
+@app.route('/unbookmark/<int:file_id>', methods=['POST'])
+@login_required
+def unbookmark_file(file_id):
+    file = Document.query.get(file_id)
+    if file is None:
+        flash('File not found.')
+        return redirect(url_for('index'))
+    if file not in current_user.bookmarked_files:
+        flash('You have not bookmarked this file.')
+        return redirect(url_for('index'))
+    current_user.bookmarked_files.remove(file)
+    db.session.commit()
+    flash('You have unbookmarked this file.')
+    return redirect(url_for('index',))
+    
+@app.route('/document/<int:document_id>', methods=['GET', 'POST'])
+def document(document_id):
+    document = Document.query.get_or_404(document_id)
+    suggested_edits = SuggestedEdit.query.filter_by(document_id=document_id).order_by(SuggestedEdit.upvotes.desc()).all()
+    if suggested_edits and suggested_edits[0].upvotes > document.upvotes:
+        document.title = suggested_edits[0].suggested_title
+        document.subject = suggested_edits[0].suggested_subject
+        db.session.commit()
+    return render_template('document.html', title=document.title, document=document)
+    
+
+@app.route('/files/<filename>')
+def uploaded_file(filename):
+    file = UploadedFile.query.filter_by(filename=filename).first_or_404()
+    return render_template('file.html', file=file)
+
+@app.route('/comment/<int:file_id>', methods=['POST'])
+@login_required
+def comment_file(file_id):
+    form = CommentForm()
+    if form.validate_on_submit():
+        comment = Comment(content=form.content.data, user_id=current_user.id, document_id=file_id)
+        db.session.add(comment)
+        db.session.commit()
+        flash('Your comment has been published.')
+    return redirect(url_for('file', file_id=file_id))
+
+
+###Anything involving uploading
+
+
+
+        
+
+
+@app.route('/upload', methods=['GET', 'POST'])
+@login_required
+def upload_file():
+    form = UploadForm()
+    if form.validate_on_submit() and request.method == 'POST':
+        if 'file' not in request.files:
+            flash('No file part in the request.', 'error')
+            return redirect(request.url)
+        file = request.files['file']
+        flash('No selected file', 'error')
+
+        if file.filename == '':
+            return redirect(request.url)
+        if file and allowed_file(file.filename):
+            f = form.file.data
+            filename = secure_filename(f.filename)  # Use 'f.filename' instead of 'file.filename'
+            file_path = os.path.join(app.config['UPLOAD_FOLDER'], 'pdfs', filename)
+            f.save(file_path)  # Use 'f.save' instead of 'file.save'
+            print(file_path)
+            # try:
+            #     except RequestEntityTooLarge:
+            #         flash('File size exceeds the maximum limit of 16 MB.', 'error')
+            #         return redirect(request.url)
+            #     except Exception as e:
+            #         flash('An error occurred while uploading the file. Please try again.', 'error')
+            #         return redirect(request.url)
+            # Generate thumbnail
+            thumbnail_path = os.path.join(app.config['UPLOAD_FOLDER'], 'thumbnails', filename)
+            generate_thumbnail(file_path, thumbnail_path)
+            textbook = form.textbook.data
+            subject = form.subject.data
+            school_name = form.school_name.data
+            professor = form.professor.data
+            upload_date = datetime.utcnow()
+            uploaded_file = Document(
+                filename=filename,
+                thumbnail=f'thumbnails/{filename}',
+                textbook=textbook,
+                subject=subject,
+                school_name=school_name,
+                professor=professor,
+                upload_date = upload_date,
+                
+            )
+
+            db.session.add(uploaded_file)
+            db.session.commit()
+
+            flash('File uploaded successfully!', 'success')
+
+            return redirect(url_for('index', filename=filename))
+    files = Document.query.all()
+    return render_template('upload.html', form=form, files=files)
+
+
+def generate_thumbnail(pdf_path, output_path, size=(200, 200)):
+    doc = fitz.open(pdf_path)  # Open the PDF file with fitz
+    page = doc[0]  # Get the first page of the PDF
+    pix = page.get_pixmap()  # Render the page to a pixmap
+    img = Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
+    img.thumbnail(size)
+    img.save(output_path, "PNG")
+  
+
+def allowed_file(filename):
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+           
+
+
+def convert_pdf_to_text(file_path):
+    with open(file_path, 'rb') as pdf_file_obj:
+        pdf_reader = PyPDF2.PdfReader(pdf_file_obj)
+        text = ""
+        for page in pdf_reader.pages:
+            text += page.extract_text()
+    return text
+
+@app.route('/generate_pdf/<int:file_id>')
+def generate_pdf(file_id):
+    # Retrieve the file data
+    file = Document.query.get_or_404(file_id)
+
+    # Specify the path to the PDF
+    pdf_path = os.path.join(app.config['UPLOAD_FOLDER'], 'thumbnail', file.filename)
+
+    return send_from_directory(app.config['UPLOAD_FOLDER'], 'thumbnail', file.filename)
+    
+    
+    
+###likes or ranks
+    
+@app.route('/like/<int:document_id>', methods=['POST'])
+@login_required
+def like_document(document_id):
+    document = Document.query.get_or_404(document_id)
+    like = Like.query.filter_by(document_id=document.id, user_id=user_id).first()
+    if like:
+        # User has already liked this document
+        return 'You have already upvoted this document.', 409
+    like = Like(document_id=document.id, user_id=user_id)
+    db.session.add(like)
+    document.ranking += 1  # increment the ranking of the document
+    db.session.commit()
+    flash('You have liked this document.')
+    return redirect(url_for('document', document_id=document_id))
+
+@app.route('/dislike/<int:document_id>', methods=['POST'])
+@login_required
+def dislike_document(document_id):
+    document = Document.query.get_or_404(document_id)
+    dislike = Dislike(user_id=current_user.id, document_id=document_id)
+    db.session.add(dislike)
+    document.ranking -= 1  # decrement the ranking of the document
+    db.session.commit()
+    flash('You have disliked this document.')
+    return redirect(url_for('document', document_id=document_id))
+
+
+
+
+###edits 
+@app.route('/suggest_edit/<int:document_id>', methods=['POST'])
+@login_required
+def suggest_edit(document_id):
+    form = SuggestEditForm()
+    if form.validate_on_submit():
+        suggested_edit = SuggestedEdit(
+            document_id=document_id,
+            user_id=current_user.id,
+            title=form.title.data,
+            content=form.content.data
+        )
+        db.session.add(suggested_edit)
+        db.session.commit()
+        flash('Your suggested edit has been submitted!')
+    return redirect(url_for('document', document_id=document_id))
+    
+    
+
+
+@app.route('/upvote_suggested_edit', methods=['POST'])
+@login_required
+def upvote_suggested_edit():
+    form = UpvoteSuggestedEditForm()
+    if form.validate_on_submit():
+        suggested_edit = SuggestedEdit.query.get_or_404(form.suggested_edit_id.data)
+        suggested_edit.upvotes += 1
+        db.session.commit()
+        flash('You have upvoted a suggested edit!', 'success')
+        
+    return redirect(url_for('document', document_id=suggested_edit.document_id))
+
+    
+
+
+
+# Comment route
+@app.route('/document/<int:document_id>/comment', methods=['POST'])
+@login_required
+def comment(document_id):
+    document = Document.query.get_or_404(document_id)
+    content = request.form.get('content')
+    comment = Comment(user_id=current_user.id, document_id=document.id, content=content)
+    db.session.add(comment)
+    db.session.commit()
+    return redirect(url_for('document', document_id=document.id))
+
+
+
+
+
+@app.route('/comment/<int:comment_id>/like', methods=['POST'])
+@login_required
+def like_comment(comment_id):
+    comment = Comment.query.get_or_404(comment_id)
+    comment.ranking += 1
+    db.session.commit()
+    return redirect(url_for('document', document_id=comment.document_id))
+
+    
+
+@app.route('/comment/<int:comment_id>/dislike', methods=['POST'])
+@login_required
+def dislike_comment(comment_id):
+    comment = Comment.query.get_or_404(comment_id)
+    comment.ranking -= 1
+    db.session.commit()
+    return redirect(url_for('document', document_id=comment.document_id))
+
+    
+
+#subscription: 
+# @app.route('/create-subscription', methods=['POST'])
+# def create_subscription():
+#     # Get the plan ID from the form data
+#     plan_id = request.form.get('plan_id')
+
+#     # Create a new subscription using the PayPal API
+#     # You'll need to replace 'YOUR_CLIENT_ID' and 'YOUR_SECRET' with your actual PayPal credentials
+#     client_id = 'YOUR_CLIENT_ID'
+#     client_secret = 'YOUR_SECRET'
+#     environment = paypalhttp.SandboxEnvironment(client_id=client_id, client_secret=client_secret)
+#     client = paypalhttp.PayPalHttpClient(environment)
+
+#     request = OrdersGetRequest(plan_id)
+#     response = client.execute(request)
+
+#     if response.status_code == 201:
+#         # Subscription was successful
+#         return redirect(url_for('success'))
+#     else:
+#         # Handle errors
+#         return 'An error occurred.'
+
+# @app.route('/cancel-subscription', methods=['POST'])
+# def cancel_subscription():
+#     # Cancel the subscription using the PayPal API
+#     # You'll need to replace 'YOUR_CLIENT_ID' and 'YOUR_SECRET' with your actual PayPal credentials
+#     client_id = 'YOUR_CLIENT_ID'
+#     client_secret = 'YOUR_SECRET'
+#     environment = paypalhttp.SandboxEnvironment(client_id=client_id, client_secret=client_secret)
+#     client = paypalhttp.PayPalHttpClient(environment)
+
+#     # You'll need to get the subscription ID from your database
+#     subscription_id = 'SUBSCRIPTION_ID'
+
+#     request = SubscriptionsCancelRequest(subscription_id)
+#     response = client.execute(request)
+
+#     if response.status_code == 204:
+#         # Subscription was cancelled successfully
+#         return 'Subscription cancelled.'
+#     else:
+#         # Handle errors
+#         return 'An error occurred.'
+        
+        
+# from datetime import datetime
+# from flask import render_template, flash, redirect, url_for, request, g, \
+#     jsonify, current_app
+# from flask_login import login_user, logout_user, current_user, login_required
+# # from flask_babel import _, get_locale
+# from app import app,  db
+# # from app.main.forms import EditProfileForm, EmptyForm, PostForm, SearchForm
+# from app.models import Users, Post, Vote, School, UploadedFile
+# # from app.translate import translate
+# from app.forms import LoginForm, RegistrationForm, EditProfileForm
+# from werkzeug.urls import url_parse
+# import PyPDF2
+# import math
+# from pdf2image import convert_from_path
+# import fitz
+# from PIL import Image
+# from googlemaps import Client
+
+
+# # @bp.before_app_request
+# # def before_request():
+# #     if current_user.is_authenticated:
+# #         current_user.last_seen = datetime.utcnow()
+# #         db.session.commit()
+# #         g.search_form = SearchForm()
+# #     g.locale = str(get_locale())
+
+
+# #authentication
+
+
+# @app.route('/login', methods=['GET', 'POST'])
+# def login():
+#     if current_user.is_authenticated:
+#         return redirect(url_for('index'))
+#     form = LoginForm()
+#     if form.validate_on_submit():
+#         user = Users.query.filter_by(username=form.username.data).first()
+#         if user is None or not user.check_password(form.password.data):
+#             flash('Invalid username or password')
+#             return redirect(url_for('login'))
+#         login_user(user, remember=form.remember_me.data)
+#         next_page = request.args.get('next')
+#         if not next_page or url_parse(next_page).netloc != '':
+#             next_page = url_for('upload')
+#         return redirect(next_page)
+#     return render_template('login.html', title='Sign In', form=form)
+
+
+
+
+
+# #Upload file and generate thumnail in order to use the thumbnail as a display icon that references the uploaded document
+
+
+
+
+
+# @app.route('/clear-db', methods=['GET'])
+# def clear_db():
+#     try:
+#         num_rows_deleted = db.session.query(UploadedFile).delete()
+#         db.session.commit()
+#         return f'Successfully deleted {num_rows_deleted} rows.'
+#     except Exception as e:
+#         return str(e)
+
+# @app.route('/v', methods=['GET', 'POST'])
+# def v_school():
+#     x = 1
+#     return render_template('validate_school.html', x = x)
+
+    
+# @app.route('/files/<filename>')
+# def uploaded_file(filename):
+#     file = UploadedFile.query.filter_by(filename=filename).first_or_404()
+#     return render_template('file.html', file=file)
+    
+
+
+
+
+
+
+# @app.route('/edit_profile', methods=['GET', 'POST'])
+# @login_required
+# def edit_profile():
+#     form = EditProfileForm()
+#     if form.validate_on_submit():
+#         current_user.username = form.username.data
+#         current_user.about_me = form.about_me.data
+#         db.session.commit()
+#         flash('Your changes have been saved.')
+#         return redirect(url_for('edit_profile'))
+#     elif request.method == 'GET':
+#         form.username.data = current_user.username
+#         form.about_me.data = current_user.about_me
+#     return render_template('edit_profile.html', title='Edit Profile',
+#                            form=form)
+    
+
+
+
+    
+
+
+# @app.route('/school', methods=['POST'])
+# def validate_school():
+#     # Get the user's input from the request
+#     school_name = request.json.get('school_name')
+
+#     # Initialize the Google Maps client with your API key
+#     gmaps = Client(key='AIzaSyA69VnOMSSxL4jyEro_pyNBbJn8oMQoQhI')
+
+#     # Use the Places Autocomplete method to find schools that match the user's input
+#     results = gmaps.places_autocomplete(school_name, types='establishment')
+
+#     # Filter the results for schools
+#     schools = [result for result in results if 'school' in result['types']]
+
+#     # If no schools were found, return an error
+#     if not schools:
+#         return jsonify({'error': 'No schools found.'}), 404
+
+#     # Otherwise, return the name and address of the first school found
+#     return jsonify({
+#         'name': schools[0]['description'],
+#         'address': schools[0]['structured_formatting']['secondary_text']
+#     }) 
+   
+
+
+
+
+
+# # @bp.route('/edit_profile', methods=['GET', 'POST'])
+# # @login_required
+# # def edit_profile():
+# #     form = EditProfileForm(current_user.username)
+# #     if form.validate_on_submit():
+# #         current_user.username = form.username.data
+# #         current_user.about_me = form.about_me.data
+# #         db.session.commit()
+# #         flash(_('Your changes have been saved.'))
+# #         return redirect(url_for('main.edit_profile'))
+# #     elif request.method == 'GET':
+# #         form.username.data = current_user.username
+# #         form.about_me.data = current_user.about_me
+# #     return render_template('edit_profile.html', title=_('Edit Profile'),
+# #                            form=form)
+
+
+# # @bp.route('/follow/<username>', methods=['POST'])
+# # @login_required
+# # def follow(username):
+# #     form = EmptyForm()
+# #     if form.validate_on_submit():
+# #         user = User.query.filter_by(username=username).first()
+# #         if user is None:
+# #             flash(_('User %(username)s not found.', username=username))
+# #             return redirect(url_for('main.index'))
+# #         if user == current_user:
+# #             flash(_('You cannot follow yourself!'))
+# #             return redirect(url_for('main.user', username=username))
+# #         current_user.follow(user)
+# #         db.session.commit()
+# #         flash(_('You are following %(username)s!', username=username))
+# #         return redirect(url_for('main.user', username=username))
+# #     else:
+# #         return redirect(url_for('main.index'))
+
+
+# # @bp.route('/unfollow/<username>', methods=['POST'])
+# # @login_required
+# # def unfollow(username):
+# #     form = EmptyForm()
+# #     if form.validate_on_submit():
+# #         user = User.query.filter_by(username=username).first()
+# #         if user is None:
+# #             flash(_('User %(username)s not found.', username=username))
+# #             return redirect(url_for('main.index'))
+# #         if user == current_user:
+# #             flash(_('You cannot unfollow yourself!'))
+# #             return redirect(url_for('main.user', username=username))
+# #         current_user.unfollow(user)
+# #         db.session.commit()
+# #         flash(_('You are not following %(username)s.', username=username))
+# #         return redirect(url_for('main.user', username=username))
+# #     else:
+# #         return redirect(url_for('main.index'))
+
+
+# @app.route('/suggest_edit', methods=['POST'])
+# def suggest_edit():
+#     data = request.get_json()
+#     text_id = data['text_id']
+#     user_id = data['user_id']
+#     content = data['content']
+
+#     text = Text.query.get(text_id)
+#     if not text:
+#         return jsonify({'message': 'Text not found'}), 404
+
+#     suggested_edit = SuggestedEdit(text_id=text_id, user_id=user_id, content=content)
+#     db.session.add(suggested_edit)
+#     db.session.commit()
+
+#     return jsonify({'message': 'Edit suggested'})
+
+
+# from datetime import datetime
+# from hashlib import md5
+# from app import db, login
+# from flask_login import UserMixin
+# from werkzeug.security import generate_password_hash, check_password_hash
+
+
+# class Users(UserMixin, db.Model):
+#     id = db.Column(db.Integer, primary_key=True)
+#     username = db.Column(db.String(64), index=True, unique=True)
+#     email = db.Column(db.String(120), index=True, unique=True)
+#     school = db.Column(db.String(64), index=True, unique=False)
+#     password_hash = db.Column(db.String(128))
+#     #posts = db.relationship('Post', backref='author', lazy='dynamic')
+#     about_me = db.Column(db.String(140))
+#     last_seen = db.Column(db.DateTime, default=datetime.utcnow)
+
+#     def __repr__(self):
+#         return '<Users {}>'.format(self.username)
+
+#     def set_password(self, password):
+#         self.password_hash = generate_password_hash(password)
+
+#     def check_password(self, password):
+#         return check_password_hash(self.password_hash, password)
+
+#     def avatar(self, size):
+#         digest = md5(self.email.lower().encode('utf-8')).hexdigest()
+#         return 'https://www.gravatar.com/avatar/{}?d=identicon&s={}'.format(
+#             digest, size)
+
+
+# @login.user_loader
+# def load_user(id):
+#     return Users.query.get(int(id))
+
+# # @login_manager.user_loader
+# # def user_loader(id):
+# #     return Users.query.filter_by(id=id).first()
+
+
+# # @login_manager.request_loader
+# # def request_loader(request):
+# #     username = request.form.get('username')
+# #     user = Users.query.filter_by(username=username).first()
+# #     return user if user else None
+
+
+# class Post(db.Model):
+#     id = db.Column(db.Integer, primary_key=True)
+#     content = db.Column(db.String(120), unique=True, nullable=False)
+#     votes = db.Column(db.Integer, default=0)
+
+
+
+from datetime import datetime
+from app import db
+from flask_login import UserMixin
+from werkzeug.security import generate_password_hash, check_password_hash
+from sqlalchemy.orm import relationship
+
+
+# association table
+bookmarks = db.Table('bookmarks',
+    db.Column('user_id', db.Integer, db.ForeignKey('user.id'), primary_key=True),
+    db.Column('document_id', db.Integer, db.ForeignKey('documents.id'), primary_key=True)
+)
+# User Model
+class User(UserMixin, db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(64), index=True, unique=True)
+    email = db.Column(db.String(120), index=True, unique=True)
+    password_hash = db.Column(db.String(128))
+    upload_date = db.Column(db.DateTime, default=datetime.utcnow)
+    documents = db.relationship('Document')
+    bookmarked_files = db.relationship('Document', secondary=bookmarks, lazy='subquery')
+    subscription = db.relationship('Subscription', backref='subscriber', lazy='dynamic')
+
+    def __repr__(self):
+        return '<User {}>'.format(self.username)
+    def set_password(self, password):
+        self.password_hash = generate_password_hash(password)
+
+    def check_password(self, password):
+        return check_password_hash(self.password_hash, password)
+
+
+class Subscription(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    paypal_subscription_id = db.Column(db.String(64))
+    start_date = db.Column(db.DateTime, default=datetime.utcnow)
+    end_date = db.Column(db.DateTime)
+    
+
+    
+    
+
+    def __repr__(self):
+        return '<Subscription {}>'.format(self.paypal_subscription_id)
+        
+# Document Model
+class Document(db.Model):
+    __tablename__ = 'documents'
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    thumbnail = db.Column(db.String(120))
+    filename = db.Column(db.String(120))
+    professor = db.Column(db.String(120))
+    textbook = db.Column(db.String(120))
+    school_name = db.Column(db.String(120))
+    upload_date = db.Column(db.DateTime, default=datetime.utcnow)
+
+
+    subject = db.Column(db.String(120))
+    ranking = db.Column(db.Integer, default=0)
+    content = db.Column(db.String(120))
+    comments = relationship('Comment', backref='document', lazy='dynamic')
+
+# School Model
+class School(db.Model):
+    __tablename__ = 'schools'
+
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(120), unique=True)
+    #documents = relationship('Document', backref='school', lazy='dynamic')
+
+# Comment Model
+class Comment(db.Model):
+    __tablename__ = 'comments'
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    document_id = db.Column(db.Integer, db.ForeignKey('documents.id'))
+    content = db.Column(db.String(120))
+    ranking = db.Column(db.Integer, default=0)
+    
+
+    
+ # Like Model
+class Like(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    document_id = db.Column(db.Integer, db.ForeignKey('documents.id'))
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+
+# Dislike Model
+class Dislike(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    document_id = db.Column(db.Integer, db.ForeignKey('documents.id'))
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+
+# SuggestedEdit Model
+class SuggestedEdit(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    document_id = db.Column(db.Integer, db.ForeignKey('documents.id'))
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    title = db.Column(db.String(120))
+    content = db.Column(db.String(120))
+    subject = db.Column(db.String(120))
+    
+    
+   
+#subscription: 
+# @app.route('/create-subscription', methods=['POST'])
+# def create_subscription():
+#     # Get the plan ID from the form data
+#     plan_id = request.form.get('plan_id')
+
+#     # Create a new subscription using the PayPal API
+#     # You'll need to replace 'YOUR_CLIENT_ID' and 'YOUR_SECRET' with your actual PayPal credentials
+#     client_id = 'YOUR_CLIENT_ID'
+#     client_secret = 'YOUR_SECRET'
+#     environment = paypalhttp.SandboxEnvironment(client_id=client_id, client_secret=client_secret)
+#     client = paypalhttp.PayPalHttpClient(environment)
+
+#     request = OrdersGetRequest(plan_id)
+#     response = client.execute(request)
+
+#     if response.status_code == 201:
+#         # Subscription was successful
+#         return redirect(url_for('success'))
+#     else:
+#         # Handle errors
+#         return 'An error occurred.'
+
+# @app.route('/cancel-subscription', methods=['POST'])
+# def cancel_subscription():
+#     # Cancel the subscription using the PayPal API
+#     # You'll need to replace 'YOUR_CLIENT_ID' and 'YOUR_SECRET' with your actual PayPal credentials
+#     client_id = 'YOUR_CLIENT_ID'
+#     client_secret = 'YOUR_SECRET'
+#     environment = paypalhttp.SandboxEnvironment(client_id=client_id, client_secret=client_secret)
+#     client = paypalhttp.PayPalHttpClient(environment)
+
+#     # You'll need to get the subscription ID from your database
+#     subscription_id = 'SUBSCRIPTION_ID'
+
+#     request = SubscriptionsCancelRequest(subscription_id)
+#     response = client.execute(request)
+
+#     if response.status_code == 204:
+#         # Subscription was cancelled successfully
+#         return 'Subscription cancelled.'
+#     else:
+#         # Handle errors
+#         return 'An error occurred.'
+        

@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Article Grid</title>
+  <link rel="stylesheet" type="text/css" href="styles.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/boxicons@2.0.7/css/boxicons.min.css">
+  <script src="https://kit.fontawesome.com/2bfc64b227.js" crossorigin="anonymous"></script>
+  <style>
+    /*=============== GOOGLE FONTS ===============*/
+    @import url("https://fonts.googleapis.com/css2?family=Poppins:wght@400;500&display=swap");
+
+    /*=============== VARIABLES CSS ===============*/
+    :root {
+      /*========== Colors ==========*/
+      /*Color mode HSL(hue, saturation, lightness)*/
+      --first-color: hsl(29, 80%, 58%);
+      --first-color-light: hsl(29, 80%, 70%);
+      --black-color: hsl(29, 16%, 10%);
+      --text-color: hsl(29, 8%, 65%);
+      --body-color: hsl(29, 100%, 99%);
+
+      /*========== Font and typography ==========*/
+      /*.5rem = 8px | 1rem = 16px ...*/
+      --body-font: "Poppins", sans-serif;
+      --h3-font-size: 1.125rem;
+      --smaller-font-size: 0.75rem;
+    }
+
+    /*=============== BASE ===============*/
+    * {
+      box-sizing: border-box;
+      padding: 0;
+      margin: 0;
+    }
+
+    body {
+      font-family: var(--body-font);
+      background-color: var(--text-color);
+    }
+
+    a {
+      text-decoration: none;
+    }
+
+    ul {
+      list-style: none;
+    }
+
+    img {
+      max-width: 100%;
+      height: auto;
+    }
+
+    /*=============== CARD ===============*/
+    .container {
+      height: 100vh;
+      margin-inline: 1.5rem;
+      display: grid;
+      place-items: center;
+    }
+
+    .card {
+      position: relative;
+      width: 256px;
+      background-color: var(--black-color);
+      padding: 1.25rem 2rem 3rem;
+      border-radius: 1.5rem;
+      text-align: center;
+      box-shadow: 0 4px 16px hsla(29, 75%, 8%, 0.2);
+      transition: transform 0.5s, box-shadow 0.5s;
+    }
+
+    .card:hover {
+      transform: translateY(-10px);
+      box-shadow: 0 8px 24px hsla(29, 75%, 8%, 0.2);
+    }
+
+    .card__img {
+      width: 96px;
+      border-radius: 50%;
+    }
+
+    .card__border {
+      width: 110px;
+      height: 110px;
+      border: 2px solid var(--first-color);
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      margin: 0 auto 0.75rem;
+    }
+
+    .card__name {
+      color: var(--first-color);
+      font-size: var(--h3-font-size);
+      font-weight: 500;
+    }
+
+    .card__profession {
+      color: var(--text-color);
+      font-size: var(--smaller-font-size);
+      font-weight: 500;
+    }
+
+    .card__social {
+      width: 200px;
+      background-color: var(--first-color);
+      padding: 0.75rem;
+      border-radius: 3rem;
+      text-align: initial;
+      box-shadow: 0 8px 24px hsla(29, 75%, 56%, 0.3);
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: -1.75rem;
+      margin: 0 auto;
+      overflow: hidden;
+      transform-origin: 18px 17px;
+    }
+
+    .card__social-control {
+      position: relative;
+      transform-origin: 18px 18px;
+      transition: transform 0.45s ease;
+      transform: rotate(0);
+    }
+
+    .card__social-toggle {
+      display: inline-flex;
+      background-color: var(--black-color);
+      color: var(--first-color);
+      font-size: 1.25rem;
+      padding: 0.5rem;
+      border-radius: 50%;
+      cursor: pointer;
+      position: relative;
+      z-index: 10;
+    }
+
+    .card__social-text {
+      display: block;
+      color: var(--black-color);
+      font-size: var(--smaller-font-size);
+      font-weight: 500;
+    }
+
+    .card__social-list {
+      display: inline-flex;
+      column-gap: 0.75rem;
+      transform: rotate(135deg);
+      transform-origin: 18px 17px;
+    }
+
+    .card__social-link {
+      display: inline-flex;
+      background-color: var(--first-color-light);
+      color: var(--black-color);
+      font-size: 1.25rem;
+      padding: 6px;
+      border-radius: 50%;
+    }
+
+    .card__social-text,
+    .card__social-list {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      padding-left: 3.1rem;
+    }
+
+    .card__social-text {
+      top: 0.5rem;
+    }
+
+    /* Rotate social */
+    .animation .card__social-control {
+      transform: rotate(-135deg);
+    }
+
+    /* Up animation */
+    .card__social.animation {
+      animation: up-animation 1s ease-in-out forwards;
+    }
+
+    @keyframes up-animation {
+      0%,
+      100% {
+        transform: rotate(0);
+      }
+      50%,
+      60% {
+        transform: rotate(-3deg);
+      }
+      88% {
+        transform: rotate(1deg);
+      }
+    }
+
+    /* Down animation */
+    .card__social.down-animation {
+      animation: down-animation 1s ease-in-out forwards;
+    }
+
+    @keyframes down-animation {
+      0%,
+      100% {
+        transform: rotate(0);
+      }
+      50%,
+      60% {
+        transform: rotate(6deg);
+      }
+      0%,
+      88% {
+        transform: rotate(-1deg);
+      }
+    }
+    
+    
+    body {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        margin: 0;
+      }
+      
+      .login-form {
+        position: relative;
+        width: 200px;
+        height: 230px;
+        border-radius: 5px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+        overflow: hidden;
+        clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+        background-image: url("static/Layer10.png");
+        background-size: cover;
+      }
+      
+      .login-form:before {
+        content: "";
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        z-index: -1;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+        clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+      }
+      
+      .login-form form {
+        margin-top: 35px;
+        padding: 20px;
+        text-align: center;
+      }
+      
+      .login-form h2 {
+        font-family: Arial, sans-serif;
+        color: #333;
+        margin-bottom: 20px;
+      }
+      
+      .login-form input[type="text"],
+      .login-form input[type="password"] {
+        width: 100%;
+        padding: 10px;
+        margin-bottom: 20px;
+        border-radius: 3px;
+        border: 1px solid #ccc;
+      }
+      
+      .login-form button {
+        background-color: #4CAF50;
+        padding: 10px 20px;
+        border: none;
+        border-radius: 3px;
+        cursor: pointer;
+      }
+      
+      .login-form button:hover {
+        background-color: #45a049;
+      }
+      
+      #bee {
+        position: absolute;
+        width: 40px;
+        height: 40px;
+        background-image: url("static/bee.png");
+        background-size: cover;
+        transition: all 0.3s ease-out;
+      }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <div class="card">
+      <div class="card__border">
+        <img src="thumbnail.jpg" alt="Article Thumbnail" class="card__img">
+      </div>
+      <h3 class="card__name">Article Title</h3>
+      <span class="card__profession">Article description...</span>
+      <div class="card__social" id="card-social">
+        <div class="card__social-control">
+          <div class="card__social-toggle" id="card-toggle">
+            <i class="ri-add-line"></i>
+          </div>
+          <span class="card__social-text">Author Name</span>
+          <ul class="card__social-list">
+            <li class="card__social-link">
+              <a href="#" target="_blank">
+                <i class="fab fa-facebook-f"></i>
+              </a>
+            </li>
+            <li class="card__social-link">
+              <a href="#" target="_blank">
+                <i class="fab fa-instagram"></i>
+              </a>
+            </li>
+            <li class="card__social-link">
+              <a href="#" target="_blank">
+                <i class="fab fa-twitter"></i>
+              </a>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    /*=============== SHOW SOCIAL NETWORKS ===============*/
+    const showSocial = (toggleCard, socialCard) => {
+      const toggle = document.getElementById(toggleCard),
+        social = document.getElementById(socialCard);
+
+      toggle.addEventListener("click", () => {
+        if (social.classList.contains("animation")) {
+          social.classList.add("down-animation");
+
+          setTimeout(() => {
+            social.classList.remove("down-animation");
+          }, 1000);
+        }
+        social.classList.toggle("animation");
+      });
+    };
+
+    showSocial("card-toggle", "card-social");
+    document.addEventListener('mousemove', function(e) {
+        const bee = document.getElementById('bee');
+        const beeRect = bee.getBoundingClientRect();
+        
+        const beeX = beeRect.left + beeRect.width / 2;
+        const beeY = beeRect.top + beeRect.height / 2;
+        
+        const diffX = e.clientX - beeX;
+        const diffY = e.clientY - beeY;
+        
+        const angle = Math.atan2(diffY, diffX);
+        const distance = Math.sqrt(diffX * diffX + diffY * diffY);
+        
+        const speed = 200;
+        const maxDistance = 2;
+        
+        const newBeeX = beeX + Math.cos(angle) * Math.min(speed, distance / maxDistance);
+        const newBeeY = beeY + Math.sin(angle) * Math.min(speed, distance / maxDistance);
+        
+        bee.style.left = newBeeX - beeRect.width / 20 + 'px';
+        bee.style.top = newBeeY - beeRect.height / 20 + 'px';
+      });
+      
+      function handleFormSubmit() {
+        const bee = document.getElementById('bee');
+        const button = document.querySelector('.login-form button');
+        const buttonRect = button.getBoundingClientRect();
+        
+        bee.style.left = buttonRect.left + 'px';
+        bee.style.top = buttonRect.top + 'px';
+        
+        return false;
+      }
+    </script>
+    
+    <div id="bee"></div>
+  <div class="login-form">
+    <form>
+      <h2>Login</h2>
+      <input type="text" placeholder="Username" required>
+      <input type="password" placeholder="Password" required>
+      <button type="submit">Login</button>
+    </form>
+  </div>
+</body>
+</html>

@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>School Validator</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+        #result {
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>School Validator</h1>
+    <form id="school-form">
+        <input type="text" id="school-name" placeholder="Enter a school name" required>
+        <button type="submit">Validate</button>
+    </form>
+    <div id="result"></div>
+    <script>
+        document.getElementById('school-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            var schoolName = document.getElementById('school-name').value;
+            
+            fetch('/school', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    'school_name': schoolName
+                }),
+            })
+            .then(response => response.json())
+            .then(data => {
+                var resultElement = document.getElementById('result');
+
+                if (data.error) {
+                    resultElement.textContent = data.error;
+                } else {
+                    resultElement.textContent = 'Name: ' + data.name + ', Address: ' + data.address;
+                }
+            })
+            .catch((error) => {
+                console.error('Error:', error);
+            });
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Profile</title>
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+</head>
+<body>
+    <div class="container">
+        <div class="row">
+            <!-- Profile Cards -->
+            <div class="col-md-8 offset-md-2">
+                <div id="profileCarousel" class="carousel slide" data-ride="carousel">
+                    <ol class="carousel-indicators">
+                        {% for user in users %}
+                        <li data-target="#profileCarousel" data-slide-to="{{ loop.index0 }}" {% if loop.first %}class="active"{% endif %}></li>
+                        {% endfor %}
+                    </ol>
+                    <div class="carousel-inner">
+                        {% for user in users %}
+                        <div class="carousel-item {% if loop.first %}active{% endif %}">
+                            <div class="card mb-4">
+                                <div class="card-body">
+                                    <h5 class="card-title">{{ user.username }}</h5>
+                                    <p class="card-text">Bookmarks: {{ user.bookmarked_files|length }}</p>
+                                    <p class="card-text">Uploaded Documents: {{ user.documents|length }}</p>
+                                    <p class="card-text">Last Seen: {{ user.last_seen }}</p>
+                                    <p class="card-text">Edits: {{ user.suggested_edits|length }}</p>
+                                </div>
+                                <ul class="list-group list-group-flush">
+                                    <li class="list-group-item"><strong>Comments:</strong></li>
+                                    {% for comment in user.comments %}
+                                    <li class="list-group-item">{{ comment.content }}</li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                        </div>
+                        {% endfor %}
+                        
+                        
+                    </div>
+                    <a class="carousel-control-prev" href="#profileCarousel" role="button" data-slide="prev">
+                        <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                        <span class="sr-only">Previous</span>
+                    </a>
+                    <a class="carousel-control-next" href="#profileCarousel" role="button" data-slide="next">
+                        <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                        <span class="sr-only">Next</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <!-- Bookmark Carousel -->
+            <div class="col-md-8 offset-md-2 mt-4">
+                <div id="bookmarkCarousel" class="carousel slide" data-ride="carousel">
+                    <ol class="carousel-indicators">
+                        {% for bookmark in current_user.bookmarked_files %}
+                        <li data-target="#bookmarkCarousel" data-slide-to="{{ loop.index0 }}" {% if loop.first %}class="active"{% endif %}></li>
+                        {% endfor %}
+                    </ol>
+                    <div class="carousel-inner">
+                        {% for bookmark in current_user.bookmarked_files %}
+                        <div class="carousel-item {% if loop.first %}active{% endif %}">
+                            <div class="card mb-4">
+                                <div class="card-body">
+                                    <h5 class="card-title">{{ bookmark.filename }}</h5>
+                                    <button class="btn btn-primary bookmark-toggle" data-doc-id="{{ bookmark.id }}">Toggle Bookmark</button>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    <a class="carousel-control-prev" href="#bookmarkCarousel" role="button" data-slide="prev">
+                        <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                        <span class="sr-only">Previous</span>
+                    </a>
+                    <a class="carousel-control-next" href="#bookmarkCarousel" role="button" data-slide="next">
+                        <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                        <span class="sr-only">Next</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Bootstrap JS -->
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            // Bookmark Toggle Button Click Event
+            $('.bookmark-toggle').on('click', function() {
+                var docId = $(this).data('doc-id');
+                // Perform the necessary bookmark toggle operation using AJAX or other means
+                // You can use the docId to identify the document and perform the appropriate action
+                // For example, you can send an AJAX request to a Flask route that handles the bookmark toggle logic
+            });
+        });
+    </script>
+</body>
+</html>

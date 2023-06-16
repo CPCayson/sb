@@ -1,0 +1,79 @@
+
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>{{ title }} - StudyBuddy</title>
+<!-- Add this script tag to include jQuery -->
+    <title>Document Viewer</title>
+    <script src="https://unpkg.com/isotope-layout@3/dist/isotope.pkgd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@10"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@6.2.3/dist/sweetalert2.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+    
+    <script src="https://mozilla.github.io/pdf.js/build/pdf.js"></script>
+        
+    <style>
+        .document-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-around;
+        }
+        
+        .document-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 20px;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            width: 200px;
+        }
+        
+        .document-item img {
+            width: 100%;
+            height: auto;
+        }
+        
+        .document-item .document-info {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-top: 10px;
+        }
+        
+        .document-item .document-info .document-name,
+        .document-item .document-info .document-school,
+        .document-item .document-info .document-ranking {
+            margin: 5px 0;
+        }
+        
+        .document-item .document-actions {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            margin-top: 10px;
+        }
+        
+        .document-item .document-actions .update-thumb,
+        .document-item .document-actions .bookmark {
+            cursor: pointer;
+        }
+        
+
+    </style>
+    
+</head>
+<body>
+
+ 
+   }{% for file in documents %}
+    {% include 'card.html' %}
+{% endfor %}
+
+
+    
+</body>
+</html>

@@ -1,0 +1,329 @@
+<html>
+
+<head>
+    <title>Study Guide Upload</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css">
+</head>
+
+<body>
+    <div class="container">
+        <h1 class="mt-4 mb-4">Uploaded Study Guides</h1>
+        {% with messages = get_flashed_messages(with_categories=true) %} {% if messages %}
+        <div class="alert alert-success">
+            {% for category, message in messages %} {{ message }} {% endfor %}
+        </div>
+        {% endif %} {% endwith %}
+        <ul class="list-group mb-4">
+            {% for file in files %}
+            <li class="list-group-item">
+                <a href="{{ url_for('uploaded_file', filename=file.filename) }}">{{ file.filename }}</a>
+            </li>
+            {% endfor %}
+        </ul>
+        <h1 class="mt-4 mb-4">Upload a New Study Guide</h1>
+        <form action="/upload" method="post" enctype="multipart/form-data">
+            <div class="form-group">
+                <label for="textbook">Textbook:</label>
+                <input type="text" id="textbook" name="textbook" class="form-control">
+            </div>
+            <div class="form-group">
+                <label for="subject">Subject:</label>
+                <input type="text" id="subject" name="subject" class="form-control">
+            </div>
+            <div class="form-group">
+                <label for="file">Study Guide:</label>
+                <input type="file" id="file" name="file" class="form-control-file">
+            </div>
+            <input type="submit" value="Upload" class="btn btn-primary">
+        </form>
+    </div>
+</body>
+
+</html> {% endcomment %} {% endcomment %} {% comment %}
+<!DOCTYPE html>
+<html>
+
+<head>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://unpkg.com/isotope-layout@3.0.6/dist/isotope.pkgd.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+            padding: 30px;
+        }
+        
+        .container {
+            background-color: white;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0px 0px 10px 0px rgba(0, 0, 0, 0.1);
+        }
+        
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+        
+        form {
+            margin-top: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-top: 20px;
+        }
+        
+        input[type="text"],
+        input[type="file"] {
+            width: 100%;
+            padding: 10px;
+            margin-top: 5px;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+        }
+        
+        input[type="submit"] {
+            display: block;
+            margin-top: 20px;
+            padding: 10px 20px;
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        
+        input[type="submit"]:hover {
+            background-color: #0056b3;
+        }
+        /* Style the search box */
+        
+        .search-container {
+            float: right;
+        }
+        
+        .search-container input[type=text] {
+            padding: 6px;
+            margin-top: 8px;
+            font-size: 17px;
+            border: none;
+        }
+        
+        .search-container button {
+            float: right;
+            padding: 6px 10px;
+            margin-top: 8px;
+            margin-right: 16px;
+            background: #ddd;
+            font-size: 17px;
+            border: none;
+            cursor: pointer;
+        }
+        
+        .search-container button:hover {
+            background: #ccc;
+        }
+    </style>
+</head>
+
+<body>
+    <button onclick="vote(1, 1, 1)">Upvote</button>
+    <button onclick="vote(1, 1, -1)">Downvote</button>
+
+    <script>
+        function vote(postId, userId, value) {
+            fetch('/vote', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        post_id: postId,
+                        user_id: userId,
+                        value: value
+                    }),
+                })
+                .then(response => response.json())
+                .then(data => {
+                    console.log('Vote recorded:', data);
+                })
+                .catch((error) => {
+                    console.error('Error:', error);
+                });
+        }
+    </script>
+
+
+    <form id="add-school-form">
+        <input type="text" id="school-name" placeholder="School name">
+        <button type="submit">Add School</button>
+    </form>
+
+    <script>
+        document.getElementById('add-school-form').addEventListener('submit', function(event) {
+            event.preventDefault();
+
+            var name = document.getElementById('school-name').value;
+
+            fetch('/add_school', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        name: name
+                    }),
+                })
+                .then(response => response.json())
+                .then(data => {
+                    console.log('Message:', data.message);
+                })
+                .catch((error) => {
+                    console.error('Error:', error);
+                });
+        });
+    </script>
+
+    <!-- Filters -->
+    <div class="filters-button-group">
+        <button data-filter="*">Show all</button>
+        <button data-filter=".English">English</button>
+        <button data-filter=".Physics">Physics</button>
+        <button data-filter=".Computer_Science">Computer Science</button>
+        <button data-filter=".Math">Math</button>
+        <button data-filter=".History">History</button>
+    </div>
+
+    <!-- Sort options -->
+    <div class="sort-by-button-group">
+        <button data-sort-by="original-order">Original order</button>
+        <button data-sort-by="date">Date</button>
+        <button data-sort-by="professor">Professor</button>
+        <button data-sort-by="textbook">Textbook</button>
+        <button data-sort-by="school">School</button>
+    </div>
+
+    <!-- Display grid of files -->
+    <div class="grid">
+        {% for file in files %}
+        <div class="grid-item {{file.subject.replace(' ', '_')}}" data-date="{{file.upload_date}}" data-textbook="{{file.textbook}}" data-school="{{file.school}}" data-professor="{{file.professor}}">
+            <img src="{{ url_for('static', filename=file.thumbnail) }}">
+            <p class="title">{{ file.filename }}</p>
+            <form action="/vote" method="post">
+                <input type="hidden" name="file_id" value="{{ file.id }}">
+                <input type="hidden" name="user_id" value="2">
+                <input type="hidden" name="value" value="1">
+                <input type="submit" value="Upvote">
+            </form>
+            <p class="upvotes">Upvotes: {{ file.votes }}</p>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Toastr JavaScript and thumbnail click event binding -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+    <script>
+        // Function to show a toast message
+        function showToast(message) {
+            toastr.success(message);
+        }
+
+        // Bind click event to image thumbnails
+        $('.grid-item img').click(function() {
+            var title = $(this).siblings('.title').text();
+            var imageSrc = $(this).attr('src');
+            var modalContent = `
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">${title}</h5>
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                        <div class="modal-body">
+                            <img src="${imageSrc}" class="img-fluid">
+                        </div>
+                    </div>
+                </div>
+            `;
+            showModal(modalContent);
+        });
+
+        // Function to show the modal
+        function showModal(content) {
+            // Remove any existing modal
+            $('#modal-container').remove();
+
+            // Create a new modal container and append it to the body
+            var modalContainer = $('<div id="modal-container"></div>');
+            $('body').append(modalContainer);
+
+            // Add the modal content
+            modalContainer.html(content);
+
+            // Show the modal
+            modalContainer.modal('show');
+        }
+    </script>
+
+    <!-- Toastr JavaScript and thumbnail click event binding -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+</body>
+
+</html> {% endcomment %} {% extends 'base.html' %} {% block content %}
+
+<head>
+    <title>Document Viewer</title>
+    <link rel="stylesheet" type="text/css" href="styles.css">
+    <script src="https://unpkg.com/isotope-layout@3/dist/isotope.pkgd.min.js"></script>
+</head>
+
+<body>
+    <div class="container">
+        <h1 class="mt-4 mb-4">Uploaded Study Guides</h1>
+        {% with messages = get_flashed_messages(with_categories=true) %} {% if messages %}
+        <div class="alert alert-success">
+            {% for category, message in messages %} {{ message }} {% endfor %}
+        </div>
+        {% endif %} {% endwith %}
+        <ul class="list-group mb-4">
+            {% for file in files %}
+            <li class="list-group-item">
+                <a href="{{ url_for('document', document_id=file.id) }}" class="btn btn-sm btn-outline-secondary">View</a>
+            </li>
+            {% endfor %}
+        </ul>
+        <div class="document-container">
+            {% for document in documents %}
+            <div class="document-item" data-category="{{ document.category }}">
+                <img src="{{ document.thumbnail }}" alt="Document Thumbnail">
+                <div class="document-info">
+                    <p class="document-name">{{ document.name }}</p>
+                    <p class="document-school">{{ document.school }}</p>
+                    <p class="document-ranking">{{ document.ranking }}</p>
+                </div>
+                <div class="document-actions">
+                    <button class="update-thumb">Like</button>
+                    <button class="bookmark">Bookmark</button>
+                </div>
+                <div class="popup">
+                    <img src="{{ document.thumbnail }}" alt="Document Thumbnail" style="width: 100%; height: auto;">
+                    <p>View count: {{ document.view_count }}</p>
+                    <button class="thumbs-up">ðŸ‘</button>
+                    <button class="thumbs-down">ðŸ‘Ž</button>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    <script src="script.js"></script>
+</body>
+{% endblock %}

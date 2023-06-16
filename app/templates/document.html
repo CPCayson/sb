@@ -1,0 +1,7 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>{{ document.name }}</h1>
+<p>Uploaded by: {{ document.user.username }}</p>
+<p>School: {{ document.school.name }}</p>
+<p>Content: {{ document.content }}</p>
+{% endblock %}

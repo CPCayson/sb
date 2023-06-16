@@ -1,0 +1,18 @@
+<div class="col-md-4">
+    <div class="card mb-4 shadow-sm">
+        <img class="card-img-top" src="{{ url_for('static', filename=file.thumbnail) }}" alt="Card image cap">
+        <div class="card-body">
+            <p class="card-text">{{ file.text }}</p>
+            <div class="d-flex justify-content-between align-items-center">
+                <p class="document-name">Name: {{ file.name }}</p><br>
+                <p class="document-school"> School: {{ file.school }}</p>
+                <p class="document-ranking">Ranking: {{ file.ranking }}</p>
+            </div>
+            <div class="btn-group">
+                <a href="{{ url_for('document', document_id=file.id) }}" class="btn btn-sm btn-outline-secondary">View</a>
+                <a href="{{ url_for('rank_file', file_id=file.id) }}" class="btn btn-sm btn-outline-secondary">Save</a>
+            </div>
+            <small class="text-muted">{{ file.id }} votes</small>
+        </div>
+    </div>
+</div>

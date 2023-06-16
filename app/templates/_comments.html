@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Comments</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+    <style>
+        .comment {
+            margin-bottom: 20px;
+        }
+        .reply {
+            margin-left: 50px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Comments</h1>
+        <div class="comment">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">User1</h5>
+                    <p class="card-text">This is a comment.</p>
+                    <a href="#" class="btn btn-success">Upvote</a>
+                    <a href="#" class="btn btn-danger">Downvote</a>
+                    <a href="#" class="btn btn-primary">Reply</a>
+                </div>
+            </div>
+            <div class="reply">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">User2</h5>
+                        <p class="card-text">This is a reply.</p>
+                        <a href="#" class="btn btn-success">Upvote</a>
+                        <a href="#" class="btn btn-danger">Downvote</a>
+                        <a href="#" class="btn btn-primary">Reply</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="comment">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">User3</h5>
+                    <p class="card-text">This is another comment.</p>
+                    <a href="#" class="btn btn-success">Upvote</a>
+                    <a href="#" class="btn btn-danger">Downvote</a>
+                    <a href="#" class="btn btn-primary">Reply</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="container">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title" id="document-title" contenteditable="true">Document Title</h5>
+                <h6 class="card-subtitle mb-2 text-muted" id="document-subject" contenteditable="true">Document Subject</h6>
+            </div>
+            <div class="card-body">
+                <p class="card-text">Some quick example text to build on the card title and make up the bulk of the card's content.</p>
+                <div id="comment-section">
+                    <!-- Comments will be dynamically generated here -->
+                </div>
+                <div class="input-group mb-3">
+                    <input type="text" class="form-control" placeholder="Add a comment" id="new-comment">
+                    <div class="input-group-append">
+                        <button class="btn btn-outline-secondary" type="button" id="add-comment">Post</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+    <script>
+        document.addEventListener('DOMContentLoaded', (event) => {
+            const replyButtons = Array.from(document.getElementsByClassName('reply-button'));
+            replyButtons.forEach(button => {
+                button.addEventListener('click', (event) => {
+                    const commentBox = document.createElement('div');
+                    commentBox.innerHTML = `
+                        <textarea class='reply-input' placeholder='Write a reply...'></textarea>
+                        <button class='submit-reply'>Submit</button>
+                    `;
+                    const parentComment = event.target.parentElement;
+                    parentComment.appendChild(commentBox);
+                    const submitButton = commentBox.querySelector('.submit-reply');
+                    submitButton.addEventListener('click', () => {
+                        const replyText = commentBox.querySelector('.reply-input').value;
+                        const replyDiv = document.createElement('div');
+                        replyDiv.classList.add('reply');
+                        replyDiv.textContent = replyText;
+                        parentComment.appendChild(replyDiv);
+                        parentComment.removeChild(commentBox);
+                    });
+                });
+            });
+        });
+    </script>
+</body>
+</html>

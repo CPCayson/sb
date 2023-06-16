@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Upload File</h1>
+<form method="POST" enctype="multipart/form-data">
+    {{ form.hidden_tag() }}
+    {{ form.file.label }} {{ form.file() }}
+    <p>
+    {{ form.textbook.label }}<br>
+    {{ form.textbook(size=32) }}<br>
+    {% for error in form.textbook.errors %}
+    <span style="color: red;">[{{ error }}]</span>
+    {% endfor %}
+</p>
+
+<p>
+    {{ form.professor.label }}<br>
+    {{ form.professor(size=32) }}<br>
+    {% for error in form.professor.errors %}
+    <span style="color: red;">[{{ error }}]</span>
+    {% endfor %}
+</p>
+
+
+<p>
+    {{ form.school.label }}<br>
+    {{ form.school(size=32) }}<br>
+    {% for error in form.school.errors %}
+    <span style="color: red;">[{{ error }}]</span>
+    {% endfor %}
+</p>
+
+<p>
+    {{ form.subject.label }}<br>
+    {{ form.subject(size=32) }}<br>
+    {% for error in form.subject.errors %}
+    <span style="color: red;">[{{ error }}]</span>
+    {% endfor %}
+</p>
+
+
+    {{ form.submit() }}
+</form>
+{% endblock %}
+
+

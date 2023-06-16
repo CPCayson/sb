@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Document Page</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+    <style>
+        .comment {
+            margin-bottom: 20px;
+        }
+        .reply {
+            margin-left: 50px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Comments</h1>
+        <div class="comment">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">User1</h5>
+                    <p class="card-text">This is a comment.</p>
+                    <a href="#" class="btn btn-success">Upvote</a>
+                    <a href="#" class="btn btn-danger">Downvote</a>
+                    <a href="#" class="btn btn-primary reply-button">Reply</a>
+                    <div class="reply-section">
+                        <div class="reply">
+                            <div class="card">
+                                <div class="card-body">
+                                    <h5 class="card-title">User2</h5>
+                                    <p class="card-text">This is a reply.</p>
+                                    <a href="#" class="btn btn-success">Upvote</a>
+                                    <a href="#" class="btn btn-danger">Downvote</a>
+                                    <a href="#" class="btn btn-primary reply-button">Reply</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="comment">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">User3</h5>
+                    <p class="card-text">This is another comment.</p>
+                    <a href="#" class="btn btn-success">Upvote</a>
+                    <a href="#" class="btn btn-danger">Downvote</a>
+                    <a href="#" class="btn btn-primary reply-button">Reply</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="container">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title" id="document-title" contenteditable="true">Document Title</h5>
+                <h6 class="card-subtitle mb-2 text-muted" id="document-subject" contenteditable="true">Document Subject</h6>
+            </div>
+            <div class="card-body">
+                <p class="card-text">Some quick example text to build on the card title and make up the bulk of the card's content.</p>
+                <div id="comment-section">
+                    <!-- Comments will be dynamically generated here -->
+                </div>
+                <div class="input-group mb-3">
+                    <input type="text" class="form-control" placeholder="Add a comment" id="new-comment">
+                    <div class="input-group-append">
+                        <button class="btn btn-outline-secondary" type="button" id="add-comment">Post</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Fetch comments from the backend and display them
+            function fetchComments() {
+                var documentId = {{ document.id|tojson }};               
+                 $.ajax({
+                    url: '/comments/document/' + documentId,
+                    type: 'GET',
+                    success: function (response) {
+                        $('#comment-section').html(response);
+                    },
+                    error: function (error) {
+                        console.log(error);
+                    }
+                });
+            }
+        
+            // Function to submit a new comment using AJAX
+            function submitComment(event) {
+                event.preventDefault();
+                var commentContent = $('#new-comment').val();
+                var documentId = {{ document.id }};
+        
+                $.ajax({
+                    url: '/comments/document/' + documentId,
+                    type: 'POST',
+                    data: { content: commentContent },
+                    success: function (response) {
+                        fetchComments(); // Fetch and update the comments after submitting a new comment
+                        $('#new-comment').val('');
+                    },
+                    error: function (error) {
+                        console.log(error);
+                    }
+                });
+            }
+        
+            // Add event listener to the comment form submit button
+            $('#add-comment').on('click', submitComment);
+        
+            // Function to handle AJAX requests for upvoting a comment
+            function likeComment(commentId) {
+                $.ajax({
+                    url: '/comments/' + commentId + '/like',
+                    type: 'POST',
+                    success: function (response) {
+                        // Update the upvote count in the specific comment
+                        $('#comment-' + commentId + ' .upvote-count').text(response.upvotes);
+                    },
+                    error: function (error) {
+                        console.log(error);
+                    }
+                });
+            }
+        
+            // Add event listener to the upvote buttons
+            $('.upvote-btn').on('click', function () {
+                var commentId = $(this).data('comment-id');
+                likeComment(commentId);
+            });
+        
+            // Function to handle AJAX requests for downvoting a comment
+            function dislikeComment(commentId) {
+                $.ajax({
+                    url: '/comments/' + commentId + '/dislike',
+                    type: 'POST',
+                    success: function (response) {
+                        // Update the downvote count in the specific comment
+                        $('#comment-' + commentId + ' .downvote-count').text(response.downvotes);
+                    },
+                    error: function (error) {
+                        console.log(error);
+                    }
+                });
+            }
+        
+            // Add event listener to the downvote buttons
+            $('.downvote-btn').on('click', function () {
+                var commentId = $(this).data('comment-id');
+                dislikeComment(commentId);
+            });
+        
+            // Fetch the comments on page load
+            fetchComments();
+        </script>
+        
+   
+</body>
+</html>

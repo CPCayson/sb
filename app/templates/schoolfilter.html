@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>StudyBuddy</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jquery.isotope/3.0.6/isotope.pkgd.min.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.isotope/3.0.6/isotope.pkgd.min.js"></script>
+    <script src="schoolValidation.js"></script>
+</head>
+
+<body>
+    <select id="schoolFilter">
+        <option value="*">All</option>
+        <!-- Schools will be dynamically added here -->
+    </select>
+
+    <div class="grid">
+        <!-- Document items will be dynamically generated here -->
+    </div>
+
+    <script>
+        // Initialize Isotope
+        var $grid = $('.grid').isotope({
+            itemSelector: '.grid-item',
+            layoutMode: 'fitRows'
+        });
+
+        // Filter items on button click
+        $('#schoolFilter').on('change', function() {
+            var filterValue = this.value;
+            $grid.isotope({
+                filter: filterValue
+            });
+        });
+    </script>
+</body>
+
+</html>
