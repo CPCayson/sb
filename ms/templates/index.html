@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Upload a File</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css">
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/js/bootstrap.min.js"></script>
+    <script>
+        async function postData(url = '', data = {}) {
+            // Default options are marked with *
+            const response = await fetch(url, {
+                method: 'POST', // *GET, POST, PUT, DELETE, etc.
+                mode: 'cors', // no-cors, *cors, same-origin
+                cache: 'no-cache', // *default, no-cache, reload, force-cache, only-if-cached
+                credentials: 'same-origin', // include, *same-origin, omit
+                headers: {
+                    'Content-Type': 'application/json'
+                    // 'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                redirect: 'follow', // manual, *follow, error
+                referrerPolicy: 'no-referrer', // no-referrer, *client
+                body: JSON.stringify(data) // body data type must match "Content-Type" header
+            });
+            return response.json(); // parses JSON response into native JavaScript objects
+        }
+
+        function showToast(message) {
+            const toastHTML = `
+                <div class="toast" role="alert" aria-live="assertive" aria-atomic="true" data-delay="2000">
+                    <div class="toast-body">
+                        ${message}
+                    </div>
+                </div>
+            `;
+            const toastElement = $(toastHTML);
+            $('.toast-container').append(toastElement);
+            toastElement.toast('show');
+            toastElement.on('hidden.bs.toast', function () {
+                toastElement.remove();
+            });
+        }
+
+        function likePDF(pdfID) {
+            postData(`/pdf/${pdfID}/like`).then(data => {
+                console.log(data);
+                showToast(data.message);
+            });
+        }
+
+        function dislikePDF(pdfID) {
+            postData(`/pdf/${pdfID}/dislike`).then(data => {
+                console.log(data);
+                showToast(data.message);
+            });
+        }
+
+        function bookmarkPDF(pdfID) {
+            postData(`/pdf/${pdfID}/bookmark`).then(data => {
+                console.log(data);
+                showToast(data.message);
+                // Toggle the appearance of the bookmark button
+                const bookmarkButton = $(`#bookmark-button-${pdfID}`);
+                if (bookmarkButton.text().trim() === 'Bookmark') {
+                    bookmarkButton.text('Unbookmark');
+                    bookmarkButton.removeClass('btn-primary').addClass('btn-secondary');
+                } else {
+                    bookmarkButton.text('Bookmark');
+                    bookmarkButton.removeClass('btn-secondary').addClass('btn-primary');
+                }
+            });
+        }
+    </script>
+</head>
+<body>
+    <h1>Upload a File</h1>
+    <form action="/upload" method="post" enctype="multipart/form-data">
+        <input type="file" name="file">
+        <input type="submit">
+    </form>
+    
+    <div class="toast-container" style="position: absolute; top: 0; right: 0;"></div>
+    
+    <div class="container">
+        {% for thumbnail in thumbnails %}
+        <div class="card" style="width: 18rem;">
+            <img src="/static/thumbnails/{{thumbnail.id}}" class="card-img-top" alt="...">
+            <div class="card-body">
+                <h5 class="card-title">{{thumbnail.id}}</h5>
+                <button onclick="likePDF('{{thumbnail.id}}')" class="btn btn-primary">Like</button>
+                <button onclick="dislikePDF('{{thumbnail.id}}')" class="btn btn-primary">Dislike</button>
+                <button id="bookmark-button-{{thumbnail.id}}" onclick="bookmarkPDF('{{thumbnail.id}}')" class="btn btn-primary">Bookmark</button>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</body>
+</html>
